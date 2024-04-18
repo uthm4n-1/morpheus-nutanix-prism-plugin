@@ -694,6 +694,20 @@ class NutanixPrismComputeUtility {
 		}
 	}
 
+	static ServiceResponse ejectCloudInitCD(HttpApiClient client, Map authConfig, String vmUuid, Map vmBody) {
+		log.debug("cloudInit CD-ROM still attached. Attempting to eject it...")
+		def cdromDisk = vmBody?.spec?.resources?.disk_list?.find { it.device_properties?.device_type == 'CDROM' }
+		
+		def cloudInitMounted = cdromDisk?.data_source_reference?.kind == 'image'
+		if(cdromDisk && cloudInitMounted) {
+				cdromDisk.data_source_reference = []
+		} else {
+			vmBody?.spec?.resources?.disk_list?.remove(cdromDisk)
+		}
+		
+		return updateVm(client, authConfig, vmUuid, vmBody)
+	}
+
 	static ServiceResponse cloudInitViaCD(HttpApiClient client, Map authConfig, String vmUuid, String imageUuid, Map vmBody) {
 		log.debug("cloudInitViaCD")
 		def cdromDisk = vmBody?.spec?.resources?.disk_list?.find { it.device_properties?.device_type == 'CDROM' }

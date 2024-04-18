@@ -2056,6 +2056,7 @@ class NutanixPrismProvisionProvider extends AbstractProvisionProvider implements
 
 								//update disks
 								def disks = serverDetail.diskList
+<<<<<<< Updated upstream
 
 								if(runConfig.categories || server.metadata) {
 									def tags = getAllTags(cloud)
@@ -2064,6 +2065,27 @@ class NutanixPrismProvisionProvider extends AbstractProvisionProvider implements
 										runConfig.categories.each { categoryString ->
 											newTags += tags[categoryString]
 										}
+=======
+								def cloudInitMounted = disks.find { it.device_properties.device_type == 'CDROM'}?.data_source_reference?.find {it.kind == 'image'}
+								if (cloudInitMounted) {
+									def cloudInitEjectResults = NutanixPrismComputeUtility.ejectCloudInitCD(client, authConfig, server.externalId, vmResource.data)
+									log.debug("[UTHMAN] - cloudInitEjectResults: ${cloudInitEjectResults}")
+								}
+								
+								//some ugly matching
+								def volumeCount = 0
+								def volumes = server.volumes.sort { it.displayOrder }
+								for (int i = 0; i < volumes.size(); i++) {
+									def volume = volumes[i]
+									def newDisk = disks.find { disk -> disk.device_properties.disk_address.adapter_type == volume.type.name.toUpperCase() && disk.device_properties.disk_address.device_index == volumeCount }
+									volume.externalId = newDisk?.uuid
+
+									def deviceName = ''
+									if(newDisk.device_properties.disk_address.adapter_type == 'SCSI' || newDisk.device_properties.disk_address.adapter_type == 'SATA') {
+										deviceName += 'sd'
+									} else {
+										deviceName += 'hd'
+>>>>>>> Stashed changes
 									}
 									server.metadata += newTags
 									updateMetadataTags(server, [cloudTags: tags, cloudVm: serverDetail.virtualMachine])
